@@ -8,7 +8,11 @@ export function useGame() {
     const [feedback, setFeedback] = useState(null);
 
     const handleNoteClick = (note) => {
-        setSelectedNotes((prev) => [...prev, note]);
+        if (selectedNotes.indexOf(note) === -1) {
+            setSelectedNotes((prev) => [...prev, note]);
+        } else {
+            setSelectedNotes((prev) => prev.filter((n) => n !== note));
+        }
     };
 
     const handleSubmit = () => {

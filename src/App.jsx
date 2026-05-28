@@ -11,6 +11,7 @@ function App() {
     handleSubmit,
   } = useGame();
 
+  const isSelected = (note) => selectedNotes.includes(note);
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center p-6">
 
@@ -41,26 +42,36 @@ function App() {
             if (key.type === "white") {
               const nextKey = PIANO_KEYS[index + 1];
               const hasBlackKey = nextKey && nextKey.type === "black";
-              
+
               return (
                 <div key={key.note} className="relative flex-shrink-0">
                   {/* White Key */}
                   <button
                     onClick={() => handleNoteClick(key.note)}
-                    className="w-12 h-44 bg-white text-zinc-900 border border-zinc-200 font-bold flex items-end justify-center pb-4 rounded-b-lg hover:bg-zinc-50 active:translate-y-0.5 transition-all duration-150"
-                  >
+                    className={`w-12 h-44 border border-zinc-200 font-bold flex items-end justify-center pb-4 rounded-b-lg active:translate-y-0.5 transition-all duration-150
+                    ${isSelected(key.note)
+                        ? "bg-blue-300"
+                        : "bg-white text-zinc-900"
+                      }
+                    `}>
                     {key.note}
                   </button>
 
                   {/* Black Key Overlay */}
-                  {hasBlackKey && (
-                    <button
-                      onClick={() => handleNoteClick(nextKey.note)}
-                      className="absolute top-0 right-0 translate-x-1/2 w-8 h-28 bg-zinc-950 text-white border-l border-r border-b border-black font-bold flex items-end justify-center pb-3 rounded-b-md hover:bg-zinc-800 active:translate-y-0.5 z-10 shadow-md transition-all duration-150"
-                    >
-                      {nextKey.note}
-                    </button>
-                  )}
+                  {
+                    hasBlackKey && (
+                      <button
+                        onClick={() => handleNoteClick(nextKey.note)}
+                        className={`absolute top-0 right-0 translate-x-1/2 w-8 h-28 font-bold flex items-end justify-center pb-3 rounded-b-md active:translate-y-0.5 z-10 shadow-md transition-all duration-150
+                        ${isSelected(nextKey.note)
+                            ? "bg-blue-500"
+                            : "bg-zinc-950 text-white"
+                          }
+                      `}>
+                        {nextKey.note}
+                      </button>
+                    )
+                  }
                 </div>
               );
             }
@@ -82,7 +93,7 @@ function App() {
         Selected: {selectedNotes.join(" ")}
       </div>
 
-    </div>
+    </div >
   );
 }
 
