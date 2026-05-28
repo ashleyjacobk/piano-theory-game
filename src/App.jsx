@@ -1,4 +1,4 @@
-import { NOTES } from "./data/notes";
+import { PIANO_KEYS } from "./data/pianoLayout";
 import { useGame } from "./hooks/useGame";
 
 function App() {
@@ -35,16 +35,38 @@ function App() {
       </div>
 
       {/* Piano */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-xl">
-        {NOTES.map((note) => (
-          <button
-            key={note}
-            onClick={() => handleNoteClick(note)}
-            className="w-14 h-14 rounded-lg bg-white text-black font-bold shadow-md active:scale-95 transition"
-          >
-            {note}
-          </button>
-        ))}
+      <div className="flex justify-center p-6 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-xl overflow-x-auto max-w-full select-none">
+        <div className="flex relative">
+          {PIANO_KEYS.map((key, index) => {
+            if (key.type === "white") {
+              const nextKey = PIANO_KEYS[index + 1];
+              const hasBlackKey = nextKey && nextKey.type === "black";
+              
+              return (
+                <div key={key.note} className="relative flex-shrink-0">
+                  {/* White Key */}
+                  <button
+                    onClick={() => handleNoteClick(key.note)}
+                    className="w-12 h-44 bg-white text-zinc-900 border border-zinc-200 font-bold flex items-end justify-center pb-4 rounded-b-lg hover:bg-zinc-50 active:translate-y-0.5 transition-all duration-150"
+                  >
+                    {key.note}
+                  </button>
+
+                  {/* Black Key Overlay */}
+                  {hasBlackKey && (
+                    <button
+                      onClick={() => handleNoteClick(nextKey.note)}
+                      className="absolute top-0 right-0 translate-x-1/2 w-8 h-28 bg-zinc-950 text-white border-l border-r border-b border-black font-bold flex items-end justify-center pb-3 rounded-b-md hover:bg-zinc-800 active:translate-y-0.5 z-10 shadow-md transition-all duration-150"
+                    >
+                      {nextKey.note}
+                    </button>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
       </div>
 
       {/* Submit */}
