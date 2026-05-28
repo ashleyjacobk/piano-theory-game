@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { generateChordPrompt, isSameChord } from "../game/prompts";
+import { playPianoNote } from "../utils/audio";
 
 export function useGame() {
     const [prompt, setPrompt] = useState(generateChordPrompt());
@@ -8,6 +9,7 @@ export function useGame() {
     const [feedback, setFeedback] = useState(null);
 
     const handleNoteClick = (note) => {
+        playPianoNote(note);
         if (selectedNotes.indexOf(note) === -1) {
             setSelectedNotes((prev) => [...prev, note]);
         } else {
