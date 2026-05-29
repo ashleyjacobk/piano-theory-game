@@ -21,17 +21,17 @@ const CHORD_INTERVALS = {
 export function generateChordPrompt(lastRoot) {
     let rootIndex = Math.floor(Math.random() * NOTES.length);
     let root = NOTES[rootIndex];
-    // Prevent duplicate consecutive roots
     while (root === lastRoot) {
         rootIndex = Math.floor(Math.random() * NOTES.length);
         root = NOTES[rootIndex];
     }
-    const intervals = CHORD_INTERVALS.major;
+    const chordType = Math.random() < 0.5 ? "major" : "minor";
+    const intervals = CHORD_INTERVALS[chordType];
     const chord = intervals.map((interval) => { return NOTES[(rootIndex + interval) % NOTES.length] });
     return {
         type: "build_chord",
-        chordType: "major",
-        question: `Build a ${root} major chord`,
+        chordType,
+        question: `Build a ${root} ${chordType} chord`,
         root,
         answer: chord,
     };

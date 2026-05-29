@@ -186,17 +186,12 @@ app.post("/api/register", async (req, res) => {
 app.get("/api/students", async (req, res) => {
     const { teacherCode } = req.query;
     try {
-        // Fetch teacher to determine lesson week boundary cycle day
+        // Fetch teacher to determine fallback lesson week boundary cycle day
         const teacher = await dbQueryGet(
             "SELECT * FROM users WHERE role = 'teacher' AND teacherCode = ?",
             [teacherCode]
         );
-        const lessonDay = teacher ? teacher.lessonDay : 'Wednesday';
-        
-        // Calculate lesson week range boundaries
-        const { startDate, endDate } = getLessonWeekBoundaries(lessonDay);
-        const weekDates = getDatesInRange(startDate, endDate);
-        const weekLabel = `${formatMonthDay(startDate)} - ${formatMonthDay(endDate)}`;
+        const fallbackLessonDay = teacher ? teacher.lessonDay : 'Wednesday';
 
         const students = await dbQueryAll(
             "SELECT * FROM users WHERE role = 'student' AND teacherCode = ?",
@@ -206,6 +201,12 @@ app.get("/api/students", async (req, res) => {
         const roster = [];
         for (const student of students) {
             const sUsername = student.username;
+            const sLessonDay = student.lessonDay || fallbackLessonDay;
+            
+            // Calculate lesson week range boundaries for this specific student
+            const { startDate: sStartDate, endDate: sEndDate } = getLessonWeekBoundaries(sLessonDay);
+            const sWeekDates = getDatesInRange(sStartDate, sEndDate);
+            const sWeekLabel = `${formatMonthDay(sStartDate)} - ${formatMonthDay(sEndDate)}`;
 
             const logs = await dbQueryAll(
                 "SELECT * FROM practice_logs WHERE username = ? ORDER BY id DESC",
@@ -213,7 +214,7 @@ app.get("/api/students", async (req, res) => {
             );
             // Sum minutes strictly for the calculated lesson week
             const totalMinutes = logs
-                .filter(log => weekDates.includes(log.date))
+                .filter(log => sWeekDates.includes(log.date))
                 .reduce((sum, log) => sum + log.minutes, 0);
 
             const sHomework = await dbQueryAll(
@@ -234,15 +235,34 @@ app.get("/api/students", async (req, res) => {
             roster.push({
                 username: sUsername,
                 name: student.name,
+                lessonDay: sLessonDay,
                 totalMinutes,
                 homework: formattedHomework,
                 practiceLogs: logs,
                 freePractice: sFreePractice,
-                weekLabel
+                weekLabel: sWeekLabel
             });
         }
 
         res.json(roster);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update Student Lesson Day (Teacher)
+app.post("/api/students/:username/lesson-day", async (req, res) => {
+    const { username } = req.params;
+    const { lessonDay } = req.body;
+    if (!lessonDay) {
+        return res.status(400).json({ error: "Missing lessonDay" });
+    }
+    try {
+        await dbRun(
+            "UPDATE users SET lessonDay = ? WHERE LOWER(username) = ? AND role = 'student'",
+            [lessonDay, username.toLowerCase()]
+        );
+        res.json({ success: true, lessonDay });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -477,10 +497,16 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
     }
 
     try {
+        const user = await dbQueryGet("SELECT role FROM users WHERE LOWER(username) = ?", [username.toLowerCase()]);
+        const role = user ? user.role : "student";
+
+        const readByTeacher = role === "teacher" ? 1 : 0;
+        const readByStudent = role === "student" ? 1 : 0;
+
         const createdAt = new Date().toISOString();
         const result = await dbRun(
-            "INSERT INTO video_comments (videoId, username, name, text, createdAt) VALUES (?, ?, ?, ?, ?)",
-            [parseInt(videoId), username, name, text.trim(), createdAt]
+            "INSERT INTO video_comments (videoId, username, name, text, createdAt, readByTeacher, readByStudent) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [parseInt(videoId), username, name, text.trim(), createdAt, readByTeacher, readByStudent]
         );
 
         res.json({
@@ -489,8 +515,67 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
             username,
             name,
             text: text.trim(),
-            createdAt
+            createdAt,
+            readByTeacher,
+            readByStudent
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get unread notifications count & feed for Teacher
+app.get("/api/notifications/teacher/:username", async (req, res) => {
+    const { username } = req.params;
+    try {
+        const teacher = await dbQueryGet("SELECT teacherCode FROM users WHERE LOWER(username) = ?", [username.toLowerCase()]);
+        if (!teacher) return res.json([]);
+
+        const rows = await dbQueryAll(
+            `SELECT vc.*, v.title AS videoTitle, v.songName AS songName, u.name AS studentName, v.studentUsername
+             FROM video_comments vc
+             JOIN videos v ON vc.videoId = v.id
+             JOIN users u ON LOWER(v.studentUsername) = LOWER(u.username)
+             WHERE UPPER(u.teacherCode) = UPPER(?) AND vc.readByTeacher = 0`,
+            [teacher.teacherCode]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get unread notifications count & feed for Student
+app.get("/api/notifications/student/:username", async (req, res) => {
+    const { username } = req.params;
+    try {
+        const rows = await dbQueryAll(
+            `SELECT vc.*, v.title AS videoTitle, v.songName AS songName
+             FROM video_comments vc
+             JOIN videos v ON vc.videoId = v.id
+             WHERE LOWER(v.studentUsername) = ? AND vc.readByStudent = 0`,
+            [username.toLowerCase()]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark comments as read for a specific video and role
+app.post("/api/videos/:videoId/comments/read", async (req, res) => {
+    const { videoId } = req.params;
+    const { role } = req.body; // 'teacher' or 'student'
+    if (!role) {
+        return res.status(400).json({ error: "Missing role" });
+    }
+    try {
+        if (role === "teacher") {
+            await dbRun("UPDATE video_comments SET readByTeacher = 1 WHERE videoId = ?", [parseInt(videoId)]);
+        } else if (role === "student") {
+            await dbRun("UPDATE video_comments SET readByStudent = 1 WHERE videoId = ?", [parseInt(videoId)]);
+        }
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -545,7 +630,8 @@ app.get("/api/student-profile/:username", async (req, res) => {
             username: student.username,
             email: student.email,
             teacherName: teacher ? teacher.name : "Unknown Teacher",
-            teacherCode: student.teacherCode
+            teacherCode: student.teacherCode,
+            lessonDay: student.lessonDay || (teacher ? teacher.lessonDay : "Wednesday")
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

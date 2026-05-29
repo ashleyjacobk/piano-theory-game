@@ -1,5 +1,75 @@
 import React, { useState, useEffect } from "react";
 
+function SearchableStudentSelect({ value, onChange, students, placeholder }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = students.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedStudent = students.find(s => s.username === value);
+
+  return (
+    <div className="relative font-sans">
+      <div 
+        className="flex bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 items-center justify-between cursor-pointer focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all text-sm"
+        onClick={() => setIsOpen(true)}
+      >
+        <input
+          type="text"
+          placeholder={selectedStudent ? `${selectedStudent.name} (@${selectedStudent.username})` : placeholder}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          className="bg-transparent w-full text-slate-800 outline-none placeholder:text-slate-800 focus:placeholder:text-slate-400 font-semibold"
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className="text-slate-400 hover:text-slate-600 outline-none ml-2 text-xs"
+        >
+          {isOpen ? "▲" : "▼"}
+        </button>
+      </div>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute z-50 w-full mt-1.5 bg-white border border-slate-200 shadow-xl rounded-xl max-h-48 overflow-y-auto py-1 text-sm font-semibold">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-slate-400 italic">No matching students found</div>
+            ) : (
+              filtered.map(student => (
+                <div
+                  key={student.username}
+                  onClick={() => {
+                    onChange(student.username);
+                    setSearch("");
+                    setIsOpen(false);
+                  }}
+                  className={`px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition ${
+                    value === student.username ? "bg-indigo-50 text-indigo-600 font-bold" : "text-slate-700"
+                  }`}
+                >
+                  {student.name} <span className="text-[10px] text-slate-400 font-normal">(@{student.username})</span>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function TeacherDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("roster"); // "roster" | "assign" | "videos" | "profile"
   const [students, setStudents] = useState([]);
@@ -11,6 +81,7 @@ export default function TeacherDashboard({ user, onLogout }) {
   // Song browsing states
   const [selectedSong, setSelectedSong] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [browseStudent, setBrowseStudent] = useState("");
 
   // Form states
   const [hwStudent, setHwStudent] = useState("");
@@ -33,6 +104,8 @@ export default function TeacherDashboard({ user, onLogout }) {
   const [vidSongName, setVidSongName] = useState("");
   const [vidTitle, setVidTitle] = useState("");
   const [vidUrl, setVidUrl] = useState("");
+  const [clonedVideoUrl, setClonedVideoUrl] = useState("");
+  const [isClonedVideoModalOpen, setIsClonedVideoModalOpen] = useState(false);
   const [vidLoading, setVidLoading] = useState(false);
   const [vidMessage, setVidMessage] = useState(null);
 
@@ -53,6 +126,10 @@ export default function TeacherDashboard({ user, onLogout }) {
 
   // Grouped Weekly practice logs accordions
   const [expandedWeeks, setExpandedWeeks] = useState({}); // { [weekLabel]: boolean }
+
+  // Notification Inbox States
+  const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
 
   useEffect(() => {
     if (!selectedStudent) {
@@ -185,6 +262,13 @@ export default function TeacherDashboard({ user, onLogout }) {
       const resArchive = await fetch("http://localhost:4000/api/songs/archive");
       const dataArchive = await resArchive.json();
       setArchivedSongs(dataArchive);
+
+      // Fetch unread notifications
+      const resNotifs = await fetch(`http://localhost:4000/api/notifications/teacher/${user.username}`);
+      if (resNotifs.ok) {
+        const dataNotifs = await resNotifs.json();
+        setUnreadNotifications(dataNotifs);
+      }
     } catch (err) {
       console.error("Error fetching teacher data:", err);
     } finally {
@@ -194,7 +278,7 @@ export default function TeacherDashboard({ user, onLogout }) {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeTab]);
 
   const handleAssignHomework = async (e) => {
     e.preventDefault();
@@ -302,6 +386,7 @@ export default function TeacherDashboard({ user, onLogout }) {
       setVidSongName("");
       setVidTitle("");
       setVidUrl("");
+      setClonedVideoUrl("");
       fetchData(); // Refresh list
     } catch (err) {
       setVidMessage({ type: "error", text: err.message });
@@ -315,6 +400,23 @@ export default function TeacherDashboard({ user, onLogout }) {
       setIsSongModalOpen(true);
     } else {
       setVidSongName(value);
+    }
+  };
+
+  const handleClonedVideoSelect = (url) => {
+    setClonedVideoUrl(url);
+    if (url) {
+      const match = videos.find(v => v.url === url);
+      if (match) {
+        setVidTitle(match.title);
+        setVidUrl(match.url);
+        if (match.songName) {
+          setVidSongName(match.songName);
+        }
+      }
+    } else {
+      setVidTitle("");
+      setVidUrl("");
     }
   };
 
@@ -394,11 +496,145 @@ export default function TeacherDashboard({ user, onLogout }) {
         const res = await fetch(`http://localhost:4000/api/videos/${videoId}/comments`);
         const data = await res.json();
         setCommentsData(prev => ({ ...prev, [videoId]: data }));
+
+        // Auto scroll to bottom
+        setTimeout(() => {
+          const el = document.getElementById(`comments-container-${videoId}`);
+          if (el) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }, 100);
+
+        // Automatically mark comments as read for the teacher
+        await fetch(`http://localhost:4000/api/videos/${videoId}/comments/read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "teacher" })
+        });
+
+        // Refetch unread notifications
+        const resNotifs = await fetch(`http://localhost:4000/api/notifications/teacher/${user.username}`);
+        if (resNotifs.ok) {
+          const dataNotifs = await resNotifs.json();
+          setUnreadNotifications(dataNotifs);
+        }
       } catch (err) {
-        console.error("Failed to load comments:", err);
+        console.error("Failed to load/mark read comments:", err);
       } finally {
         setCommentsLoading(prev => ({ ...prev, [videoId]: false }));
       }
+    }
+  };
+
+  const handleMarkNotificationRead = async (videoId) => {
+    try {
+      await fetch(`http://localhost:4000/api/videos/${videoId}/comments/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "teacher" })
+      });
+      const resNotifs = await fetch(`http://localhost:4000/api/notifications/teacher/${user.username}`);
+      if (resNotifs.ok) {
+        const dataNotifs = await resNotifs.json();
+        setUnreadNotifications(dataNotifs);
+      }
+    } catch (err) {
+      console.error("Failed to mark read:", err);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      const uniqueVideoIds = Array.from(new Set(unreadNotifications.map(n => n.videoId)));
+      await Promise.all(uniqueVideoIds.map(vId => 
+        fetch(`http://localhost:4000/api/videos/${vId}/comments/read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "teacher" })
+        })
+      ));
+      setUnreadNotifications([]);
+    } catch (err) {
+      console.error("Failed to mark all read:", err);
+    }
+  };
+
+  const handleUpdateStudentLessonDay = async (studentUsername, newLessonDay) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/students/${studentUsername}/lesson-day`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonDay: newLessonDay })
+      });
+      if (res.ok) {
+        // Refresh local dashboard data (fetchData refreshes the student roster stats!)
+        fetchData();
+        // Keep selected student popup in sync
+        setSelectedStudent(prev => prev ? { ...prev, lessonDay: newLessonDay } : null);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update lesson day");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update lesson day");
+    }
+  };
+
+  const handleGoToVideo = async (videoNotif) => {
+    setIsInboxOpen(false);
+    setActiveTab("videos");
+    setVidStudent(videoNotif.studentUsername);
+    setBrowseStudent(videoNotif.studentUsername);
+    setSelectedSong(videoNotif.songName);
+    setExpandedComments(prev => ({ ...prev, [videoNotif.videoId]: true }));
+    setCommentsLoading(prev => ({ ...prev, [videoNotif.videoId]: true }));
+    try {
+      const res = await fetch(`http://localhost:4000/api/videos/${videoNotif.videoId}/comments`);
+      const data = await res.json();
+      setCommentsData(prev => ({ ...prev, [videoNotif.videoId]: data }));
+
+      await fetch(`http://localhost:4000/api/videos/${videoNotif.videoId}/comments/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "teacher" })
+      });
+
+      const resNotifs = await fetch(`http://localhost:4000/api/notifications/teacher/${user.username}`);
+      if (resNotifs.ok) {
+        const dataNotifs = await resNotifs.json();
+        setUnreadNotifications(dataNotifs);
+      }
+
+      // Smoothly scroll to the target video and to the bottom of the comments list
+      setTimeout(() => {
+        const el = document.getElementById(`video-card-${videoNotif.videoId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        const commEl = document.getElementById(`comments-container-${videoNotif.videoId}`);
+        if (commEl) {
+          commEl.scrollTop = commEl.scrollHeight;
+        }
+      }, 300);
+
+    } catch (err) {
+      console.error("Failed to go to video/load comments:", err);
+    } finally {
+      setCommentsLoading(prev => ({ ...prev, [videoNotif.videoId]: false }));
+    }
+  };
+
+  const formatCommentDate = (dateStr) => {
+    const dateObj = new Date(dateStr);
+    const now = new Date();
+    const commentDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (commentDate.getTime() === todayDate.getTime()) {
+      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return `${dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
   };
 
@@ -429,6 +665,14 @@ export default function TeacherDashboard({ user, onLogout }) {
         }));
         setCommentInputs(prev => ({ ...prev, [videoId]: "" }));
         
+        // Auto scroll to bottom
+        setTimeout(() => {
+          const el = document.getElementById(`comments-container-${videoId}`);
+          if (el) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }, 100);
+
         // Increment count locally on the video object
         setVideos(prev =>
           prev.map(v =>
@@ -441,8 +685,12 @@ export default function TeacherDashboard({ user, onLogout }) {
     }
   };
 
+  const filteredVideosByStudent = browseStudent 
+    ? videos.filter(v => v.studentUsername.toLowerCase() === browseStudent.toLowerCase())
+    : [];
+
   // Group videos by song name
-  const groupedVideos = videos.reduce((acc, video) => {
+  const groupedVideos = filteredVideosByStudent.reduce((acc, video) => {
     if (!acc[video.songName]) {
       acc[video.songName] = [];
     }
@@ -453,6 +701,10 @@ export default function TeacherDashboard({ user, onLogout }) {
   const allSongNames = Object.keys(groupedVideos);
   const activeSongs = allSongNames.filter(name => !archivedSongs.includes(name));
   const archivedSongsList = allSongNames.filter(name => archivedSongs.includes(name));
+
+  const uniquePastVideos = Array.from(
+    new Map(videos.map(v => [v.url, { title: v.title, url: v.url, composer: v.composer || "", songName: v.songName }])).values()
+  );
 
   // Set default selected song if none is selected or if current selection is invalid for the view
   useEffect(() => {
@@ -468,80 +720,105 @@ export default function TeacherDashboard({ user, onLogout }) {
   }, [showArchived, archivedSongs, videos, selectedSong]);
 
   return (
-    <div className="w-full max-w-5xl flex flex-col p-4 font-sans text-slate-800">
-      
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xl shadow-slate-100/40 mb-8 gap-4">
+    <div className="w-full max-w-6xl flex flex-col md:flex-row p-4 font-sans text-slate-800 gap-8 items-start">
+      {/* LEFT SIDEBAR (reduces vertical scroll) */}
+      <div className="w-full md:w-64 flex-shrink-0 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xl shadow-slate-100/40 flex flex-col gap-6 md:sticky md:top-4 select-none">
+        {/* Branding */}
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-            Teacher Dashboard
+          <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none">
+            Teacher
           </h1>
-          <p className="font-medium text-slate-500 mt-1 text-sm">
-            Welcome back, {user.name} | <span className="bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg text-xs font-bold text-indigo-600">Teacher Code: {user.teacherCode}</span>
+          <h1 className="text-xl font-extrabold text-indigo-600 tracking-tight leading-none mt-1">
+            Dashboard
+          </h1>
+          <div className="mt-3">
+            <span className="bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg text-[9px] font-bold text-indigo-600 block w-fit">
+              Code: {user.teacherCode}
+            </span>
+          </div>
+          <p className="font-bold text-slate-400 mt-2 text-[10px] uppercase tracking-wider">
+            Teacher: {user.name}
           </p>
         </div>
-        <button
-          onClick={() => onLogout()}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition duration-200 active:scale-[0.98] cursor-pointer border border-slate-200/50"
-        >
-          Logout
-        </button>
-      </div>
 
-      {/* Tabs Control - Modern Pill Switcher */}
-      <div className="flex flex-wrap p-1 bg-slate-200/60 rounded-xl mb-8 w-fit gap-1 shadow-sm border border-slate-200/40">
-        <button
-          onClick={() => setActiveTab("roster")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition duration-200 cursor-pointer ${
-            activeTab === "roster"
-              ? "bg-white text-slate-800 shadow-sm"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/30"
-          }`}
-        >
-          Student Roster
-        </button>
+        {/* Navigation Tabs (Vertical Stack!) */}
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => setActiveTab("roster")}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition duration-200 cursor-pointer ${
+              activeTab === "roster"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            Student Roster
+          </button>
 
-        <button
-          onClick={() => setActiveTab("assign")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition duration-200 cursor-pointer ${
-            activeTab === "assign"
-              ? "bg-white text-slate-800 shadow-sm"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/30"
-          }`}
-        >
-          Assign Homework
-        </button>
+          <button
+            onClick={() => setActiveTab("assign")}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition duration-200 cursor-pointer ${
+              activeTab === "assign"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            Assign Homework
+          </button>
 
-        <button
-          onClick={() => setActiveTab("videos")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition duration-200 cursor-pointer ${
-            activeTab === "videos"
-              ? "bg-white text-slate-800 shadow-sm"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/30"
-          }`}
-        >
-          Video Lessons
-        </button>
+          <button
+            onClick={() => setActiveTab("videos")}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition duration-200 cursor-pointer ${
+              activeTab === "videos"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            Video Lessons
+          </button>
 
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition duration-200 cursor-pointer ${
-            activeTab === "profile"
-              ? "bg-white text-slate-800 shadow-sm"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/30"
-          }`}
-        >
-          My Profile
-        </button>
-      </div>
-
-      {/* Content Area */}
-      {loadingData ? (
-        <div className="text-xl font-bold text-center p-12 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-100/40">
-          Syncing classroom data...
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition duration-200 cursor-pointer ${
+              activeTab === "profile"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+            }`}
+          >
+            My Profile
+          </button>
         </div>
-      ) : (
-        <div className="w-full">
+
+        {/* Sidebar Actions */}
+        <div className="mt-auto border-t border-slate-100 pt-4 flex flex-col gap-2">
+          <button
+            onClick={() => setIsInboxOpen(true)}
+            className="w-full relative px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition duration-200 active:scale-[0.98] cursor-pointer flex items-center justify-between"
+          >
+            <span>Inbox Messages</span>
+            {unreadNotifications.length > 0 && (
+              <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
+                {unreadNotifications.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => onLogout()}
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition duration-200 active:scale-[0.98] cursor-pointer border border-slate-200/50 text-center"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* RIGHT MAIN CONTENT AREA */}
+      <div className="flex-1 w-full">
+        {loadingData ? (
+          <div className="text-xl font-bold text-center p-12 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-100/40">
+            Syncing classroom data...
+          </div>
+        ) : (
+          <div className="w-full">
           {/* TAB 1: STUDENT ROSTER */}
           {activeTab === "roster" && (
             <div className="flex flex-col gap-6">
@@ -713,17 +990,12 @@ export default function TeacherDashboard({ user, onLogout }) {
               <form onSubmit={handleAssignHomework} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Select Student</label>
-                  <select
+                  <SearchableStudentSelect
                     value={hwStudent}
-                    onChange={(e) => setHwStudent(e.target.value)}
-                    className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer"
-                  >
-                    {students.map((student) => (
-                      <option key={student.username} value={student.username}>
-                        {student.name} (@{student.username})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setHwStudent(val)}
+                    students={students}
+                    placeholder="Search student..."
+                  />
                 </div>
 
                 <div>
@@ -734,7 +1006,8 @@ export default function TeacherDashboard({ user, onLogout }) {
                     className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer"
                   >
                     <option value="note">Identify the Note</option>
-                    <option value="chord">Build a Chord</option>
+                    <option value="chord">Chord Builder</option>
+                    <option value="staff">Staff Reader</option>
                     <option value="practice">Practice a Song</option>
                   </select>
                 </div>
@@ -846,19 +1119,12 @@ export default function TeacherDashboard({ user, onLogout }) {
                 <form onSubmit={handleAddVideo} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Target Student</label>
-                    <select
+                    <SearchableStudentSelect
                       value={vidStudent}
-                      onChange={(e) => setVidStudent(e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer"
-                      required
-                    >
-                      <option value="" disabled>-- Select student roster --</option>
-                      {students.map((student) => (
-                        <option key={student.username} value={student.username}>
-                          {student.name} (@{student.username})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setVidStudent(val)}
+                      students={students}
+                      placeholder="Search student..."
+                    />
                   </div>
 
                   <div>
@@ -868,16 +1134,29 @@ export default function TeacherDashboard({ user, onLogout }) {
                       onChange={(e) => handleSongSelectChange(e.target.value)}
                       className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer"
                       required
+                      disabled={!vidStudent}
                     >
                       <option value="" disabled>-- Select a Song --</option>
-                      {availableSongs.map((songName) => (
-                        <option key={songName} value={songName}>
-                          {songName}
-                        </option>
-                      ))}
                       <option value="ADD_NEW_SONG" className="font-bold text-indigo-600 bg-indigo-50">
                         -- Add New Song... --
                       </option>
+                      {(() => {
+                        const currentStudentActiveVideos = vidStudent
+                          ? videos.filter(v => v.studentUsername.toLowerCase() === vidStudent.toLowerCase() && !archivedSongs.includes(v.songName))
+                          : [];
+                        const currentStudentActiveSongs = Array.from(new Set(currentStudentActiveVideos.map(v => v.songName))).filter(Boolean);
+                        
+                        // Include the newly added song in options if it's not already there
+                        if (vidSongName && vidSongName !== "ADD_NEW_SONG" && !currentStudentActiveSongs.includes(vidSongName)) {
+                          currentStudentActiveSongs.push(vidSongName);
+                        }
+
+                        return currentStudentActiveSongs.map((songName) => (
+                          <option key={songName} value={songName}>
+                            {songName}
+                          </option>
+                        ));
+                      })()}
                     </select>
                   </div>
 
@@ -905,6 +1184,30 @@ export default function TeacherDashboard({ user, onLogout }) {
                     />
                   </div>
 
+                  {(() => {
+                    const otherStudentsVideosForSong = vidSongName
+                      ? videos.filter(v =>
+                          v.songName.toLowerCase() === vidSongName.toLowerCase() &&
+                          v.studentUsername.toLowerCase() !== vidStudent.toLowerCase()
+                        )
+                      : [];
+                    const hasCommonVideos = otherStudentsVideosForSong.length > 0;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setIsClonedVideoModalOpen(true)}
+                        disabled={!hasCommonVideos}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition duration-200 active:scale-[0.98] cursor-pointer border ${
+                          hasCommonVideos
+                            ? "bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 shadow-sm"
+                            : "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed"
+                        }`}
+                      >
+                        Choose Existing Video for this Song
+                      </button>
+                    );
+                  })()}
+
                   <button
                     type="submit"
                     disabled={vidLoading || students.length === 0}
@@ -919,58 +1222,80 @@ export default function TeacherDashboard({ user, onLogout }) {
               <div className="lg:col-span-2 space-y-6">
                 {/* Selector Header Panel */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xl shadow-slate-100/40">
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-                    <h3 className="text-lg font-bold text-slate-800">
-                      {showArchived ? "Archived Songs Folder" : "Active Lessons Library"}
-                    </h3>
-                    <button
-                      onClick={() => { setShowArchived(!showArchived); setSelectedSong(""); }}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition duration-200 cursor-pointer active:scale-[0.98]"
-                    >
-                      {showArchived ? "View Active Songs" : "View Archived Songs"}
-                    </button>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Select Student to Browse Library</label>
+                    <SearchableStudentSelect
+                      value={browseStudent}
+                      onChange={(val) => {
+                        setBrowseStudent(val);
+                        setSelectedSong("");
+                      }}
+                      students={students}
+                      placeholder="Search student..."
+                    />
                   </div>
 
-                  {/* Horizontal Song Tabs */}
-                  <div className="flex flex-wrap gap-2">
-                    {showArchived ? (
-                      archivedSongsList.length === 0 ? (
-                        <span className="text-xs font-medium text-slate-400 italic">No archived songs.</span>
-                      ) : (
-                        archivedSongsList.map(song => (
-                          <button
-                            key={song}
-                            onClick={() => setSelectedSong(song)}
-                            className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition duration-200 cursor-pointer ${
-                              selectedSong === song
-                                ? "bg-indigo-600 text-white shadow-sm"
-                                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                            }`}
-                          >
-                            {song}
-                          </button>
-                        ))
-                      )
-                    ) : (
-                      activeSongs.length === 0 ? (
-                        <span className="text-xs font-medium text-slate-400 italic">No active songs in lessons library.</span>
-                      ) : (
-                        activeSongs.map(song => (
-                          <button
-                            key={song}
-                            onClick={() => setSelectedSong(song)}
-                            className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition duration-200 cursor-pointer ${
-                              selectedSong === song
-                                ? "bg-indigo-600 text-white shadow-sm"
-                                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                            }`}
-                          >
-                            {song}
-                          </button>
-                        ))
-                      )
-                    )}
-                  </div>
+                  {browseStudent ? (
+                    <>
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-4 pb-3 mb-4">
+                        <h3 className="text-sm font-bold text-slate-700">
+                          {showArchived ? "Archived Songs Folder" : "Active Lessons Library"}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => { setShowArchived(!showArchived); setSelectedSong(""); }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition duration-200 cursor-pointer active:scale-[0.98]"
+                        >
+                          {showArchived ? "View Active Songs" : "View Archived Songs"}
+                        </button>
+                      </div>
+
+                      {/* Horizontal Song Tabs */}
+                      <div className="flex flex-wrap gap-2">
+                        {showArchived ? (
+                          archivedSongsList.length === 0 ? (
+                            <span className="text-xs font-medium text-slate-400 italic">No archived songs for this student.</span>
+                          ) : (
+                            archivedSongsList.map(song => (
+                              <button
+                                key={song}
+                                onClick={() => setSelectedSong(song)}
+                                className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition duration-200 cursor-pointer ${
+                                  selectedSong === song
+                                    ? "bg-indigo-600 text-white shadow-sm"
+                                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                                }`}
+                              >
+                                {song}
+                              </button>
+                            ))
+                          )
+                        ) : (
+                          activeSongs.length === 0 ? (
+                            <span className="text-xs font-medium text-slate-400 italic">No active songs in this student's lessons library.</span>
+                          ) : (
+                            activeSongs.map(song => (
+                              <button
+                                key={song}
+                                onClick={() => setSelectedSong(song)}
+                                className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition duration-200 cursor-pointer ${
+                                  selectedSong === song
+                                    ? "bg-indigo-600 text-white shadow-sm"
+                                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                                }`}
+                              >
+                                {song}
+                              </button>
+                            ))
+                          )
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-6 border-t border-slate-100">
+                      <p className="text-xs font-semibold text-slate-400 italic">Please select a student from the dropdown above to browse their assigned lessons and video history.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Videos for the Selected Song */}
@@ -1036,7 +1361,7 @@ export default function TeacherDashboard({ user, onLogout }) {
 
                             {expandedComments[video.id] && (
                               <div className="mt-3 bg-slate-100/50 border border-slate-200/80 p-3 rounded-xl shadow-sm">
-                                <div className="max-h-36 overflow-y-auto space-y-2.5 pr-1 text-left">
+                                <div id={`comments-container-${video.id}`} className="max-h-36 overflow-y-auto space-y-2.5 pr-1 text-left">
                                   {commentsLoading[video.id] ? (
                                     <p className="text-[10px] font-bold text-indigo-500 animate-pulse text-center">Loading comments...</p>
                                   ) : (commentsData[video.id] || []).length === 0 ? (
@@ -1047,7 +1372,7 @@ export default function TeacherDashboard({ user, onLogout }) {
                                         <div className="flex justify-between font-bold text-[9px] text-slate-500 mb-1">
                                           <span>{comment.name} (@{comment.username})</span>
                                           <span className="text-[8px] font-medium text-slate-400">
-                                            {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {formatCommentDate(comment.createdAt)}
                                           </span>
                                         </div>
                                         <p className="text-slate-700 leading-relaxed font-medium">{comment.text}</p>
@@ -1227,6 +1552,7 @@ export default function TeacherDashboard({ user, onLogout }) {
           )}
         </div>
       )}
+      </div>
 
       {/* DETAIL WORKFLOW MODAL */}
       {selectedStudent && (
@@ -1234,17 +1560,35 @@ export default function TeacherDashboard({ user, onLogout }) {
           <div className="bg-white border border-slate-200/80 w-full max-w-3xl rounded-2xl p-6 md:p-8 shadow-2xl max-h-[85vh] overflow-y-auto font-sans">
             
             {/* Modal Header */}
-            <div className="flex justify-between items-start border-b border-slate-100 pb-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-slate-800">{selectedStudent.name}</h2>
                 <p className="font-semibold text-slate-400 mt-1 text-sm">Detailed Progress & Practice Journal</p>
               </div>
-              <button
-                onClick={() => setSelectedStudent(null)}
-                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition duration-200 cursor-pointer active:scale-[0.98]"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-sm">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Lesson Day:</label>
+                  <select
+                    value={selectedStudent.lessonDay || "Wednesday"}
+                    onChange={(e) => handleUpdateStudentLessonDay(selectedStudent.username, e.target.value)}
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-indigo-500 transition-all"
+                  >
+                    <option value="Sunday">Sunday</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => setSelectedStudent(null)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition duration-200 cursor-pointer active:scale-[0.98]"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1254,7 +1598,7 @@ export default function TeacherDashboard({ user, onLogout }) {
                 {selectedStudent.practiceLogs.length === 0 ? (
                   <p className="text-slate-400 text-xs italic font-semibold">No entries logged yet.</p>
                 ) : (() => {
-                  const groupedWeeks = groupLogsByLessonWeeks(selectedStudent.practiceLogs, teacherProfile?.lessonDay);
+                  const groupedWeeks = groupLogsByLessonWeeks(selectedStudent.practiceLogs, selectedStudent.lessonDay || teacherProfile?.lessonDay);
                   return (
                     <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                       {groupedWeeks.map((group) => {
@@ -1383,7 +1727,7 @@ export default function TeacherDashboard({ user, onLogout }) {
               Add New Song
             </h3>
             <form onSubmit={handleAddSongSubmit} className="space-y-4">
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                   Song Name (Required)
                 </label>
@@ -1393,8 +1737,57 @@ export default function TeacherDashboard({ user, onLogout }) {
                   placeholder="e.g. Für Elise"
                   value={newSongName}
                   onChange={(e) => setNewSongName(e.target.value)}
+                  onKeyDown={(e) => {
+                    const uniqueSystemSongs = Array.from(new Set(videos.map(v => v.songName))).filter(Boolean);
+                    const autocompleteSuggestions = newSongName.trim()
+                      ? uniqueSystemSongs.filter(song =>
+                          song.toLowerCase().includes(newSongName.toLowerCase()) &&
+                          song.toLowerCase() !== newSongName.trim().toLowerCase()
+                        )
+                      : [];
+                    if (e.key === "Tab" || e.key === "Enter") {
+                      if (autocompleteSuggestions.length > 0) {
+                        e.preventDefault();
+                        const chosen = autocompleteSuggestions[0];
+                        setNewSongName(chosen);
+                        if (songComposers[chosen]) {
+                          setNewComposer(songComposers[chosen]);
+                        }
+                      }
+                    }
+                  }}
                   className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none"
+                  autoComplete="off"
                 />
+
+                {(() => {
+                  const uniqueSystemSongs = Array.from(new Set(videos.map(v => v.songName))).filter(Boolean);
+                  const autocompleteSuggestions = newSongName.trim()
+                    ? uniqueSystemSongs.filter(song =>
+                        song.toLowerCase().includes(newSongName.toLowerCase()) &&
+                        song.toLowerCase() !== newSongName.trim().toLowerCase()
+                      )
+                    : [];
+                  if (autocompleteSuggestions.length === 0) return null;
+                  return (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-lg rounded-xl max-h-32 overflow-y-auto py-1 text-xs font-semibold text-slate-700">
+                      {autocompleteSuggestions.map((suggestion) => (
+                        <div
+                          key={suggestion}
+                          onClick={() => {
+                            setNewSongName(suggestion);
+                            if (songComposers[suggestion]) {
+                              setNewComposer(songComposers[suggestion]);
+                            }
+                          }}
+                          className="px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition text-left"
+                        >
+                          {suggestion} {songComposers[suggestion] && <span className="text-[10px] text-slate-400 font-normal">({songComposers[suggestion]})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
@@ -1429,6 +1822,172 @@ export default function TeacherDashboard({ user, onLogout }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NOTIFICATION INBOX MODAL */}
+      {isInboxOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/80 shadow-2xl rounded-2xl p-6 max-w-lg w-full font-sans">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4 font-sans">
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                Comment Inbox
+              </h3>
+              {unreadNotifications.length > 0 && (
+                <button
+                  onClick={handleMarkAllNotificationsRead}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            {unreadNotifications.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm font-bold text-slate-400 italic">No unread comments in your inbox.</p>
+                <button
+                  onClick={() => setIsInboxOpen(false)}
+                  className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200/50 text-slate-700 font-bold rounded-xl text-xs transition duration-200 active:scale-[0.98] cursor-pointer"
+                >
+                  Close Inbox
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="max-h-72 overflow-y-auto space-y-3 pr-1">
+                  {unreadNotifications.map((notif) => (
+                    <div key={notif.id} className="bg-slate-50/50 border border-slate-200/60 p-4 rounded-xl shadow-sm text-left flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 mb-1">
+                          <span>Student: {notif.studentName} (@{notif.studentUsername})</span>
+                          <span>{new Date(notif.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="text-xs font-black text-slate-700 mb-2">
+                          On Video: "{notif.videoTitle}" ({notif.songName})
+                        </div>
+                        <p className="text-xs text-slate-600 italic bg-white border border-slate-100 p-2.5 rounded-lg font-medium leading-relaxed">
+                          "{notif.text}"
+                        </p>
+                      </div>
+
+                      <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100">
+                        <button
+                          onClick={() => handleMarkNotificationRead(notif.videoId)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200/50 text-slate-600 font-bold rounded-lg text-[10px] transition duration-200 cursor-pointer"
+                        >
+                          Mark Read
+                        </button>
+                        <button
+                          onClick={() => handleGoToVideo(notif)}
+                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] transition duration-200 cursor-pointer shadow-sm shadow-indigo-100"
+                        >
+                          Go to Video
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => setIsInboxOpen(false)}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition duration-200 active:scale-[0.98] cursor-pointer shadow-md shadow-slate-100"
+                  >
+                    Close Inbox
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CHOOSE CLONED VIDEO MODAL */}
+      {isClonedVideoModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-slate-800 shadow-2xl rounded-3xl p-6 max-w-lg w-full font-sans">
+            <div className="flex justify-between items-center border-b-3 border-slate-100 pb-3 mb-4">
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                Choose Existing Video
+              </h3>
+              <button
+                onClick={() => setIsClonedVideoModalOpen(false)}
+                className="text-xs font-black text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <p className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">
+              Select a video previously uploaded for "{vidSongName}" to re-use:
+            </p>
+
+            {(() => {
+              const otherStudentsVideosForSong = vidSongName
+                ? videos.filter(v =>
+                    v.songName.toLowerCase() === vidSongName.toLowerCase() &&
+                    v.studentUsername.toLowerCase() !== vidStudent.toLowerCase()
+                  )
+                : [];
+              
+              const uniqueClonedVideos = [];
+              const seenUrls = new Set();
+              for (const video of otherStudentsVideosForSong) {
+                if (!seenUrls.has(video.url)) {
+                  seenUrls.add(video.url);
+                  uniqueClonedVideos.push(video);
+                }
+              }
+
+              if (uniqueClonedVideos.length === 0) {
+                return (
+                  <div className="text-center py-6">
+                    <p className="text-xs font-bold text-slate-400 italic">No existing uploads found for this song.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                  {uniqueClonedVideos.map((video) => (
+                    <div
+                      key={video.id}
+                      onClick={() => {
+                        handleClonedVideoSelect(video.url);
+                        setIsClonedVideoModalOpen(false);
+                      }}
+                      className="group bg-slate-50/50 hover:bg-indigo-50/30 border-3 border-slate-800 p-4 rounded-2xl shadow-[3px_3px_0px_#1e293b] hover:shadow-[3px_3px_0px_#6366f1] transition-all cursor-pointer flex justify-between items-center text-left"
+                    >
+                      <div className="flex-1 mr-4">
+                        <div className="text-xs font-black text-slate-800 group-hover:text-indigo-600 transition mb-1">
+                          {video.title}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 truncate max-w-xs">
+                          {video.url}
+                        </div>
+                        <div className="text-[9px] font-black text-emerald-600 mt-1 uppercase tracking-wide">
+                          Shared with: {video.studentUsername}
+                        </div>
+                      </div>
+                      <span className="bg-indigo-600 text-white font-black text-[10px] px-2.5 py-1.5 rounded-xl shadow-sm opacity-90 group-hover:opacity-100 transition whitespace-nowrap">
+                        Select Video
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => setIsClonedVideoModalOpen(false)}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 border-2 border-slate-800 text-slate-700 font-black rounded-xl text-xs transition duration-200 active:translate-y-0.5 cursor-pointer shadow-[2px_2px_0px_#1e293b]"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -46,9 +46,8 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center p-6 w-full transition-all duration-300 ${
-      isRegister ? "max-w-2xl" : "max-w-md"
-    }`}>
+    <div className={`flex flex-col items-center justify-center p-6 w-full transition-all duration-300 ${isRegister ? "max-w-2xl" : "max-w-md"
+      }`}>
       {/* Title */}
       <h1 className="text-4xl font-extrabold mb-6 text-slate-800 tracking-tight text-center">
         Piano Academy
@@ -56,28 +55,26 @@ export default function Login({ onLoginSuccess }) {
 
       {/* Main Card */}
       <div className="w-full bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-xl shadow-slate-100/50">
-        
+
         {/* Sign In / Register Tab Switcher */}
         <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
           <button
             type="button"
             onClick={() => { setIsRegister(false); setError(null); }}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition duration-200 cursor-pointer ${
-              !isRegister
-                ? "bg-white text-slate-800 shadow-sm"
-                : "bg-transparent text-slate-500 hover:text-slate-800"
-            }`}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition duration-200 cursor-pointer ${!isRegister
+              ? "bg-white text-slate-800 shadow-sm"
+              : "bg-transparent text-slate-500 hover:text-slate-800"
+              }`}
           >
             Sign In
           </button>
           <button
             type="button"
             onClick={() => { setIsRegister(true); setError(null); }}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition duration-200 cursor-pointer ${
-              isRegister
-                ? "bg-white text-slate-800 shadow-sm"
-                : "bg-transparent text-slate-500 hover:text-slate-800"
-            }`}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition duration-200 cursor-pointer ${isRegister
+              ? "bg-white text-slate-800 shadow-sm"
+              : "bg-transparent text-slate-500 hover:text-slate-800"
+              }`}
           >
             Register
           </button>
@@ -116,22 +113,20 @@ export default function Login({ onLoginSuccess }) {
                     <button
                       type="button"
                       onClick={() => { setRole("student"); setTeacherCode(""); }}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition duration-200 active:scale-[0.98] border cursor-pointer ${
-                        role === "student"
-                          ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                      }`}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition duration-200 active:scale-[0.98] border cursor-pointer ${role === "student"
+                        ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                        }`}
                     >
                       🎓 Student
                     </button>
                     <button
                       type="button"
                       onClick={() => { setRole("teacher"); setTeacherCode(""); }}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition duration-200 active:scale-[0.98] border cursor-pointer ${
-                        role === "teacher"
-                          ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                      }`}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition duration-200 active:scale-[0.98] border cursor-pointer ${role === "teacher"
+                        ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                        }`}
                     >
                       🍎 Teacher
                     </button>
@@ -242,7 +237,7 @@ export default function Login({ onLoginSuccess }) {
           <div className="text-[11px] mt-2 text-slate-500 flex flex-wrap justify-center gap-x-6 gap-y-1">
             <div>Student: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">ashley</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
             <div>Teacher: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">teacher</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
-          </div>
+            a          </div>
         </div>
       </div>
     </div>
