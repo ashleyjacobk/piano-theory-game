@@ -1,7 +1,11 @@
 import { NOTES } from "../data/notes";
 
-export function generateFindNotePrompt() {
-    const note = NOTES[Math.floor(Math.random() * NOTES.length)];
+export function generateFindNotePrompt(lastAnswer) {
+    let note = NOTES[Math.floor(Math.random() * NOTES.length)];
+    // Prevent duplicate consecutive notes
+    while (note === lastAnswer) {
+        note = NOTES[Math.floor(Math.random() * NOTES.length)];
+    }
     return {
         type: "find_note",
         question: `Find the note ${note}`,
@@ -14,9 +18,14 @@ const CHORD_INTERVALS = {
     minor: [0, 3, 7],
 }
 
-export function generateChordPrompt() {
-    const rootIndex = Math.floor(Math.random() * NOTES.length);
-    const root = NOTES[rootIndex];
+export function generateChordPrompt(lastRoot) {
+    let rootIndex = Math.floor(Math.random() * NOTES.length);
+    let root = NOTES[rootIndex];
+    // Prevent duplicate consecutive roots
+    while (root === lastRoot) {
+        rootIndex = Math.floor(Math.random() * NOTES.length);
+        root = NOTES[rootIndex];
+    }
     const intervals = CHORD_INTERVALS.major;
     const chord = intervals.map((interval) => { return NOTES[(rootIndex + interval) % NOTES.length] });
     return {
