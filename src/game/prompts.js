@@ -5,7 +5,7 @@ export function generateFindNotePrompt() {
     return {
         type: "find_note",
         question: `Find the note ${note}`,
-        answer: note,
+        answer: [note],
     };
 }
 
@@ -28,9 +28,8 @@ export function generateChordPrompt() {
     };
 }
 
-export function isSameChord(userNotes, correctNotes) {
-    const sortedUser = [...userNotes].sort();
-    const sortedCorrect = [...correctNotes].sort();
-
-    return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect);
+export function isCorrectAnswer(userNotes, correctNotes) {
+    const A = [...userNotes].sort();
+    const B = [...correctNotes].sort();
+    return A.length === B.length && A.every((v, i) => v === B[i]);
 }

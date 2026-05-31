@@ -1,8 +1,13 @@
-import { useState } from "react";
-import { generateChordPrompt, isSameChord } from "../game/prompts";
+import { useState, useEffect } from "react";
+import { generateChordPrompt, generateFindNotePrompt, isCorrectAnswer } from "../game/prompts";
 import { playPianoNote } from "../utils/audio";
 
+
 export function useGame() {
+
+
+
+    const [gameMode, setGameMode] = useState("chord");
     const [prompt, setPrompt] = useState(generateChordPrompt());
     const [selectedNotes, setSelectedNotes] = useState([]);
     const [score, setScore] = useState(0);
@@ -17,8 +22,14 @@ export function useGame() {
         }
     };
 
+
+    const generatePrompt = (mode) => {
+        if (mode === "chord") return generateChordPrompt();
+        if (mode === "note") return generateFindNotePrompt();
+    };
+
     const handleSubmit = () => {
-        const correct = isSameChord(selectedNotes, prompt.answer);
+        const correct = isCorrectAnswer(selectedNotes, prompt.answer);
 
         if (correct) {
             setScore((s) => s + 1);
@@ -27,9 +38,14 @@ export function useGame() {
             setFeedback("Try again");
         }
 
-        setPrompt(generateChordPrompt());
+        setPrompt(generatePrompt(gameMode));
         setSelectedNotes([]);
     };
+
+    useEffect(() => {
+        setPrompt(generatePrompt(gameMode));
+        setSelectedNotes([]);
+    }, [gameMode]);
 
     return {
         prompt,
@@ -38,5 +54,7 @@ export function useGame() {
         feedback,
         handleNoteClick,
         handleSubmit,
+        gameMode,
+        setGameMode
     };
 }

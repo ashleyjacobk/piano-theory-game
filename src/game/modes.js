@@ -1,4 +1,4 @@
 export const GAME_MODES = {
-    FIND_NOTE: "find_note",
-    BUILD_CHORD: "build_chord",
+    FIND_NOTE: "note",
+    BUILD_CHORD: "chord",
 };

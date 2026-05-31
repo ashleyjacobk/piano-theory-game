@@ -9,6 +9,8 @@ function App() {
     feedback,
     handleNoteClick,
     handleSubmit,
+    gameMode,
+    setGameMode,
   } = useGame();
 
   const isSelected = (note) => selectedNotes.includes(note);
@@ -23,6 +25,27 @@ function App() {
       {/* Score */}
       <div className="bg-white border-4 border-black px-6 py-3 rounded-xl text-2xl font-bold shadow-[6px_6px_0px_rgba(0,0,0,1)] mb-4">
         ⭐ Score: {score}
+      </div>
+
+      <div className="mb-4 text-xl font-bold">
+        Mode: {gameMode}
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setGameMode("chord")
+          }
+          className="px-4 py-2 border-4 border-black rounded-xl font-bold bg-white"
+        >
+          Build Chord
+        </button>
+
+        <button
+          onClick={() => setGameMode("note")}
+          className="px-4 py-2 border-4 border-black rounded-xl font-bold bg-white"
+        >
+          Find Note
+        </button>
       </div>
 
       {/* Prompt */}
