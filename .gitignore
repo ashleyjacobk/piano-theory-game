@@ -1,4 +1,45 @@
-# Logs
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Production Builds
+dist/
+dist-ssr/
+
+# SQLite Database & Storage
+backend/database.db
+backend/database.db-journal
+
+# Uploaded Files & media
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.rar
+*.zip
+*.tar
+*.gz
+*.MOV
+*.mov
+*.mp4
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Operating System & Editor Files
+.DS_Store
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Debug Logs
 logs
 *.log
 npm-debug.log*
@@ -6,19 +47,3 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
