@@ -44,13 +44,12 @@ export function generateChordPrompt(lastRoot) {
     };
 }
 
-<<<<<<< HEAD
 export function isCorrectAnswer(userNotes, correctNotes) {
     const A = [...userNotes].sort();
     const B = [...correctNotes].sort();
     return A.length === B.length && A.every((v, i) => v === B[i]);
 }
-=======
+
 const INTERVAL_SEMITONES = {
     "Minor 3rd": 3,
     "Major 3rd": 4,
@@ -112,4 +111,3 @@ export function isSameChord(userNotes, correctNotes) {
 
     return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect);
 }
->>>>>>> 075f878069ad0daf48d81d8f2d37ac126ea84497
