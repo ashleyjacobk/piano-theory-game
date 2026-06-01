@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Login from "./components/Login";
-import TeacherDashboard from "./components/TeacherDashboard";
-import StudentDashboard from "./components/StudentDashboard";
+import TeacherDashboard from "./components/teacher/TeacherDashboard";
+import StudentDashboard from "./components/student/StudentDashboard";
 
 function App() {
   const [user, setUser] = useState(null);

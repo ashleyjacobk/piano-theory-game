@@ -21,7 +21,13 @@ export default function Login({ onLoginSuccess }) {
       : "http://localhost:4000/api/login";
 
     const body = isRegister
-      ? { username: username.trim(), email: email.trim(), password, name: name.trim(), role, teacherCode: teacherCode.trim() }
+      ? {
+          email: email.trim(),
+          password,
+          name: name.trim(),
+          role,
+          ...(role === "student" ? { teacherCode: teacherCode.trim() } : {})
+        }
       : { username: username.trim(), password };
 
     try {
@@ -102,7 +108,7 @@ export default function Login({ onLoginSuccess }) {
 
           {isRegister ? (
             /* Registration Layout - Responsive Two Columns on Desktop */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left">
 
               {/* Column 1 */}
               <div className="space-y-4">
@@ -118,7 +124,7 @@ export default function Login({ onLoginSuccess }) {
                         : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                     >
-                      🎓 Student
+                      Student
                     </button>
                     <button
                       type="button"
@@ -128,7 +134,7 @@ export default function Login({ onLoginSuccess }) {
                         : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                     >
-                      🍎 Teacher
+                      Teacher
                     </button>
                   </div>
                 </div>
@@ -143,7 +149,10 @@ export default function Login({ onLoginSuccess }) {
                     className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none"
                   />
                 </div>
+              </div>
 
+              {/* Column 2 */}
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
                   <input
@@ -151,20 +160,6 @@ export default function Login({ onLoginSuccess }) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Column 2 */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Username</label>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none"
                   />
                 </div>
@@ -180,25 +175,27 @@ export default function Login({ onLoginSuccess }) {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                    {role === "teacher" ? "Create teacher code" : "Teacher's connection code"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={teacherCode}
-                    onChange={(e) => setTeacherCode(e.target.value)}
-                    className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none uppercase"
-                  />
-                </div>
+                {role === "student" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                      Teacher's connection code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={teacherCode}
+                      onChange={(e) => setTeacherCode(e.target.value)}
+                      className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none uppercase"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ) : (
             /* Sign In Layout - Single Column */
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Username or Email</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
                 <input
                   type="text"
                   required
@@ -235,9 +232,9 @@ export default function Login({ onLoginSuccess }) {
         <div className="mt-6 border-t border-slate-100 pt-4 text-center">
           <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Quick Test Credentials</p>
           <div className="text-[11px] mt-2 text-slate-500 flex flex-wrap justify-center gap-x-6 gap-y-1">
-            <div>Student: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">ashley</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
-            <div>Teacher: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">teacher</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
-            a          </div>
+            <div>Student: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">ashley@piano.com</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
+            <div>Teacher: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">teacher@piano.com</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
+          </div>
         </div>
       </div>
     </div>
