@@ -22,12 +22,12 @@ export default function Login({ onLoginSuccess }) {
 
     const body = isRegister
       ? {
-          email: email.trim(),
-          password,
-          name: name.trim(),
-          role,
-          ...(role === "student" ? { teacherCode: teacherCode.trim() } : {})
-        }
+        email: email.trim(),
+        password,
+        name: name.trim(),
+        role,
+        ...(role === "student" ? { teacherCode: teacherCode.trim() } : {})
+      }
       : { username: username.trim(), password };
 
     try {
@@ -228,14 +228,7 @@ export default function Login({ onLoginSuccess }) {
           </button>
         </form>
 
-        {/* Demo Helper */}
-        <div className="mt-6 border-t border-slate-100 pt-4 text-center">
-          <p className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Quick Test Credentials</p>
-          <div className="text-[11px] mt-2 text-slate-500 flex flex-wrap justify-center gap-x-6 gap-y-1">
-            <div>Student: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">ashley@piano.com</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
-            <div>Teacher: <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">teacher@piano.com</span> / <span className="font-semibold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">password</span></div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

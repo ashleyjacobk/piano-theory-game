@@ -21,7 +21,7 @@ export default function SearchableStudentSelect({ value, onChange, students, pla
         <input
           type="text"
           placeholder={
-            selectedStudent ? `${selectedStudent.name} (@${selectedStudent.username})` : placeholder
+            selectedStudent ? `${selectedStudent.name} (${selectedStudent.username})` : placeholder
           }
           value={search}
           onChange={(e) => {
@@ -62,7 +62,7 @@ export default function SearchableStudentSelect({ value, onChange, students, pla
                     value === student.username ? "bg-indigo-50 text-indigo-600 font-bold" : "text-slate-700"
                   }`}
                 >
-                  {student.name} <span className="text-slate-400 text-xs font-normal">(@{student.username})</span>
+                  {student.name} <span className="text-slate-400 text-xs font-normal">({student.username})</span>
                 </div>
               ))
             )}

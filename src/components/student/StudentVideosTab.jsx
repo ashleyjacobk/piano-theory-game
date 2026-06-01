@@ -88,7 +88,7 @@ function VideoCard({ video, user, onCommentCountChange }) {
                 comments.map((comment) => (
                   <div key={comment.id} className="text-[11px] bg-emerald-50/30 p-2 rounded-xl border-2 border-slate-800">
                     <div className="flex justify-between font-black text-[9px] text-emerald-600 mb-1">
-                      <span>{comment.name} (@{comment.username})</span>
+                      <span>{comment.name} ({comment.username})</span>
                       <span className="text-[8px] font-semibold text-slate-400">
                         {formatCommentDate(comment.createdAt)}
                       </span>

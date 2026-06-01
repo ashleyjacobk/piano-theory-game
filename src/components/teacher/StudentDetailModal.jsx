@@ -1,21 +1,17 @@
 import React, { useState } from "react";
 
-// Helper function to calculate the date of the next lesson day
-const getWeekRangeForDate = (dateStr, lessonDayName) => {
-  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const targetDayIndex = DAYS.indexOf(lessonDayName || 'Wednesday');
-  const validDayIndex = targetDayIndex === -1 ? 3 : targetDayIndex;
-
+// Helper function to calculate a standard Monday-to-Sunday week range for a date
+const getWeekRangeForDate = (dateStr) => {
   const [yearVal, monthVal, dayVal] = dateStr.split('-').map(Number);
   const logDate = new Date(yearVal, monthVal - 1, dayVal);
   logDate.setHours(0, 0, 0, 0);
 
-  const currentDayIndex = logDate.getDay();
+  const currentDayIndex = logDate.getDay(); // 0 (Sun) to 6 (Sat)
 
-  // Calculate start date (most recent lessonDay <= logDate)
-  let daysToSubtract = currentDayIndex - validDayIndex;
+  // Calculate start date (most recent Monday <= logDate)
+  let daysToSubtract = currentDayIndex - 1; // 1 is Monday
   if (daysToSubtract < 0) {
-    daysToSubtract += 7;
+    daysToSubtract += 7; // Sunday goes back 6 days to Monday
   }
 
   const startDate = new Date(logDate);
@@ -32,12 +28,12 @@ const getWeekRangeForDate = (dateStr, lessonDayName) => {
   };
 };
 
-const groupLogsByLessonWeeks = (logs, lessonDayName) => {
+const groupLogsByLessonWeeks = (logs) => {
   const groups = {}; // { [weekLabel]: Array of logs }
   const weekStartDates = {}; // { [weekLabel]: Date }
 
   logs.forEach(log => {
-    const { label, startDate } = getWeekRangeForDate(log.date, lessonDayName);
+    const { label, startDate } = getWeekRangeForDate(log.date);
     if (!groups[label]) {
       groups[label] = [];
       weekStartDates[label] = startDate;
@@ -54,21 +50,11 @@ const groupLogsByLessonWeeks = (logs, lessonDayName) => {
 
 export default function StudentDetailModal({
   selectedStudent,
-  onClose,
-  onUpdateLessonDay,
-  teacherProfile
+  onClose
 }) {
   const [expandedWeeks, setExpandedWeeks] = useState({});
 
   if (!selectedStudent) return null;
-
-  const lessonDay = selectedStudent.lessonDay || "Wednesday";
-
-  const handleDayChange = (e) => {
-    if (onUpdateLessonDay) {
-      onUpdateLessonDay(selectedStudent.username, e.target.value);
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -81,22 +67,6 @@ export default function StudentDetailModal({
             <p className="font-semibold text-slate-400 mt-1 text-sm">Detailed Progress & Practice Journal</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-sm">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Lesson Day:</label>
-              <select
-                value={lessonDay}
-                onChange={handleDayChange}
-                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-indigo-500 transition-all"
-              >
-                <option value="Sunday">Sunday</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-              </select>
-            </div>
             <button
               onClick={onClose}
               className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition duration-200 cursor-pointer active:scale-[0.98]"
@@ -113,7 +83,7 @@ export default function StudentDetailModal({
             {(!selectedStudent.practiceLogs || selectedStudent.practiceLogs.length === 0) ? (
               <p className="text-slate-400 text-xs italic font-semibold">No entries logged yet.</p>
             ) : (() => {
-              const groupedWeeks = groupLogsByLessonWeeks(selectedStudent.practiceLogs, lessonDay || teacherProfile?.lessonDay);
+              const groupedWeeks = groupLogsByLessonWeeks(selectedStudent.practiceLogs);
               return (
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                   {groupedWeeks.map((group) => {

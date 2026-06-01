@@ -13,10 +13,8 @@ function getPast7DaysStrings() {
 }
 
 // Helper to get lesson week boundaries (MM/DD - MM/DD) based on weekly lesson day cycle (e.g. Wednesday)
-function getLessonWeekBoundaries(lessonDayName) {
-    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const targetDayIndex = DAYS.indexOf(lessonDayName || 'Wednesday');
-    const validDayIndex = targetDayIndex === -1 ? 3 : targetDayIndex; // Default Wednesday
+function getLessonWeekBoundaries() {
+    const validDayIndex = 1; // Fixed to Monday for standard calendar week
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Midnight local time

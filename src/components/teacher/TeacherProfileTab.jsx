@@ -10,7 +10,6 @@ export default function TeacherProfileTab({
 }) {
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
-  const [profileLessonDay, setProfileLessonDay] = useState("Wednesday");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState(null);
 
@@ -22,7 +21,6 @@ export default function TeacherProfileTab({
     if (teacherProfile) {
       setProfileName(teacherProfile.name || "");
       setProfileEmail(teacherProfile.email || "");
-      setProfileLessonDay(teacherProfile.lessonDay || "Wednesday");
     }
   }, [teacherProfile]);
 
@@ -35,8 +33,7 @@ export default function TeacherProfileTab({
       await updateTeacherProfile({
         username: user.username,
         name: profileName.trim(),
-        email: profileEmail.trim(),
-        lessonDay: profileLessonDay
+        email: profileEmail.trim()
       });
 
       setProfileMessage({ type: "success", text: "Settings saved successfully! 🎉" });
@@ -86,9 +83,9 @@ export default function TeacherProfileTab({
                 <span className="text-lg font-black text-indigo-600">{teacherProfile.name}</span>
               </div>
               <div>
-                <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Username</span>
+                <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Email</span>
                 <span className="bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded text-xs font-bold text-indigo-600 block w-fit shadow-sm">
-                  @{teacherProfile.username}
+                  {teacherProfile.username}
                 </span>
               </div>
             </div>
@@ -100,27 +97,20 @@ export default function TeacherProfileTab({
                   {teacherProfile.teacherCode}
                 </span>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Weekly Lesson Day</span>
-                <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded text-sm font-bold text-slate-700 block w-fit">
-                  {teacherProfile.lessonDay || "Wednesday"}
-                </span>
-              </div>
             </div>
           </div>
 
           {/* EDIT PROFILE & LESSON SETTINGS FORM */}
           <div className="mt-8 border-t border-slate-100 pt-6">
             <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide select-none">
-              Edit Profile & Lesson Settings
+              Edit Profile Settings
             </h3>
             {profileMessage && (
               <div
-                className={`border p-2.5 rounded-xl text-xs font-semibold mb-4 text-center ${
-                  profileMessage.type === "success"
+                className={`border p-2.5 rounded-xl text-xs font-semibold mb-4 text-center ${profileMessage.type === "success"
                     ? "bg-emerald-50 border-emerald-100 text-emerald-800"
                     : "bg-red-50 border-red-100 text-red-800"
-                }`}
+                  }`}
               >
                 {profileMessage.text}
               </div>
@@ -151,28 +141,6 @@ export default function TeacherProfileTab({
                     className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-xs outline-none font-semibold"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 select-none">
-                  Weekly Lesson Day
-                </label>
-                <select
-                  value={profileLessonDay}
-                  onChange={(e) => setProfileLessonDay(e.target.value)}
-                  className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-xs outline-none cursor-pointer font-semibold"
-                >
-                  <option value="Sunday">Sunday</option>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                </select>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1 select-none">
-                  Practice minutes calculations and student rosters reset automatically on this day every week.
-                </p>
               </div>
 
               <button

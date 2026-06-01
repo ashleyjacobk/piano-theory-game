@@ -4,8 +4,8 @@ import { assignHomework } from "../../api/homeworkApi";
 
 export default function AssignHomeworkTab({
   students = [],
-  teacherProfile = null,
   videos = [],
+  archivedSongs = [],
   fetchData
 }) {
   const [hwStudent, setHwStudent] = useState("");
@@ -17,44 +17,40 @@ export default function AssignHomeworkTab({
   const [hwLoading, setHwLoading] = useState(false);
   const [hwMessage, setHwMessage] = useState(null);
 
-  const getNextLessonDateString = (dayName) => {
-    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const targetDayIndex = DAYS.indexOf(dayName || "Wednesday");
-    const validDayIndex = targetDayIndex === -1 ? 3 : targetDayIndex;
-
+  const getDefaultDueDateString = () => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + 7);
 
-    const currentDayIndex = today.getDay();
-    let daysToAdd = validDayIndex - currentDayIndex;
-    if (daysToAdd <= 0) {
-      daysToAdd += 7;
-    }
-
-    const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + daysToAdd);
-
-    const y = nextDate.getFullYear();
-    const m = String(nextDate.getMonth() + 1).padStart(2, "0");
-    const d = String(nextDate.getDate()).padStart(2, "0");
+    const y = targetDate.getFullYear();
+    const m = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const d = String(targetDate.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
 
   useEffect(() => {
-    if (hwStudent && students.length > 0) {
-      const selected = students.find((s) => s.username === hwStudent);
-      if (selected && selected.lessonDay) {
-        setHwDueDate(getNextLessonDateString(selected.lessonDay));
-      } else if (teacherProfile) {
-        setHwDueDate(getNextLessonDateString(teacherProfile.lessonDay));
-      }
-    } else if (teacherProfile) {
-      setHwDueDate(getNextLessonDateString(teacherProfile.lessonDay));
-    }
-  }, [hwStudent, students, teacherProfile]);
+    setHwDueDate(getDefaultDueDateString());
+  }, [hwStudent]);
 
-  const availableSongs = Array.from(new Set(videos.map((v) => v.songName))).filter(Boolean);
+  useEffect(() => {
+    setHwSongName("");
+    setHwCustomSongName("");
+  }, [hwStudent]);
 
+  const availableSongs = Array.from(
+    new Set(
+      videos
+        .filter((video) => {
+          const belongsToSelectedStudent =
+            video.studentUsername?.toLowerCase() === hwStudent.toLowerCase();
+
+          const isActiveSong = !archivedSongs.includes(video.songName);
+
+          return belongsToSelectedStudent && isActiveSong;
+        })
+        .map((video) => video.songName)
+    )
+  ).filter(Boolean);
   const handleAssignHomework = async (e) => {
     e.preventDefault();
     setHwLoading(true);
@@ -97,7 +93,7 @@ export default function AssignHomeworkTab({
 
       setHwMessage({
         type: "success",
-        text: `Homework successfully assigned to @${hwStudent}! 🎉`
+        text: `Homework successfully assigned to ${hwStudent}! 🎉`
       });
 
       // Reset form fields
@@ -106,9 +102,7 @@ export default function AssignHomeworkTab({
       setHwSongName("");
       setHwCustomSongName("");
       setHwTarget("10");
-      if (teacherProfile) {
-        setHwDueDate(getNextLessonDateString(teacherProfile.lessonDay));
-      }
+      setHwDueDate(getDefaultDueDateString());
 
       // Refresh teacher data
       await fetchData();
@@ -129,11 +123,10 @@ export default function AssignHomeworkTab({
 
         {hwMessage && (
           <div
-            className={`border p-3 rounded-xl font-semibold text-center mb-6 text-sm ${
-              hwMessage.type === "success"
-                ? "bg-emerald-50 border-emerald-100 text-emerald-800"
-                : "bg-red-50 border-red-100 text-red-800"
-            }`}
+            className={`border p-3 rounded-xl font-semibold text-center mb-6 text-sm ${hwMessage.type === "success"
+              ? "bg-emerald-50 border-emerald-100 text-emerald-800"
+              : "bg-red-50 border-red-100 text-red-800"
+              }`}
           >
             {hwMessage.text}
           </div>
@@ -145,36 +138,71 @@ export default function AssignHomeworkTab({
               Select Student
             </label>
             <SearchableStudentSelect
-              value={hwStudent}
-              onChange={(val) => setHwStudent(val)}
               students={students}
+              value={hwStudent}
+              onChange={setHwStudent}
               placeholder="Search student..."
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 select-none">
-              Game Mode
+              Assignment Type
             </label>
-            <select
-              value={hwType}
-              onChange={(e) => {
-                const val = e.target.value;
-                setHwType(val);
-                // Update standard targets based on mode
-                if (val === "note" || val === "chord" || val === "staff") {
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setHwType("note");
                   setHwTarget("10");
-                } else {
-                  setHwTarget("15"); // 15 minutes practice
-                }
-              }}
-              className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer font-semibold"
-            >
-              <option value="note">Identify the Note</option>
-              <option value="chord">Chord Builder</option>
-              <option value="staff">Staff Reader</option>
-              <option value="practice">Practice a Song</option>
-            </select>
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${hwType === "note"
+                  ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                  : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+              >
+                Note Match
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHwType("chord");
+                  setHwTarget("10");
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${hwType === "chord"
+                  ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                  : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+              >
+                Chord Build
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHwType("staff");
+                  setHwTarget("10");
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${hwType === "staff"
+                  ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                  : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+              >
+                Staff Reader
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHwType("practice");
+                  setHwTarget("15");
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${hwType === "practice"
+                  ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                  : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                  }`}
+              >
+                Practice Log
+              </button>
+            </div>
           </div>
 
           {hwType === "practice" && (
@@ -184,18 +212,17 @@ export default function AssignHomeworkTab({
                   Select Song to Practice
                 </label>
                 <select
-                  required
                   value={hwSongName}
                   onChange={(e) => setHwSongName(e.target.value)}
                   className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer font-semibold"
                 >
-                  <option value="">-- Select a Song --</option>
+                  <option value="">-- Choose Song --</option>
                   {availableSongs.map((song) => (
                     <option key={song} value={song}>
                       {song}
                     </option>
                   ))}
-                  <option value="custom">Other / Custom Song...</option>
+                  <option value="custom">-- Type Custom Song Name --</option>
                 </select>
               </div>
 
@@ -234,22 +261,13 @@ export default function AssignHomeworkTab({
 
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 select-none">Due Date</label>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                required
-                value={hwDueDate}
-                onChange={(e) => setHwDueDate(e.target.value)}
-                className="flex-1 bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer font-semibold"
-              />
-              <button
-                type="button"
-                onClick={() => setHwDueDate(getNextLessonDateString(teacherProfile?.lessonDay))}
-                className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold rounded-xl text-xs transition duration-200 active:scale-[0.95] cursor-pointer select-none"
-              >
-                Next Lesson
-              </button>
-            </div>
+            <input
+              type="date"
+              required
+              value={hwDueDate}
+              onChange={(e) => setHwDueDate(e.target.value)}
+              className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all text-sm outline-none cursor-pointer font-semibold"
+            />
           </div>
 
           <button

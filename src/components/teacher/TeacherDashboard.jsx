@@ -7,7 +7,6 @@ import TeacherProfileTab from "./TeacherProfileTab";
 import StudentDetailModal from "./StudentDetailModal";
 import CommentInboxModal from "./CommentInboxModal";
 import useTeacherData from "../../hooks/useTeacherData";
-import { updateStudentLessonDay } from "../../api/profileApi";
 import { markCommentsRead, getTeacherNotifications } from "../../api/videosApi";
 
 export default function TeacherDashboard({ user, onLogout }) {
@@ -42,18 +41,7 @@ export default function TeacherDashboard({ user, onLogout }) {
     }
   }, [activeTab]);
 
-  const handleUpdateStudentLessonDay = async (studentUsername, newLessonDay) => {
-    try {
-      await updateStudentLessonDay(studentUsername, newLessonDay);
-      // Keep selected student popup in sync
-      setSelectedStudent(prev => prev ? { ...prev, lessonDay: newLessonDay } : null);
-      // Refresh teacher details
-      await fetchTeacherData();
-    } catch (err) {
-      console.error("Failed to update lesson day:", err);
-      alert("Failed to update lesson day");
-    }
-  };
+
 
   const handleMarkNotificationRead = async (videoId) => {
     try {
@@ -91,7 +79,7 @@ export default function TeacherDashboard({ user, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FFFDEB] p-4 md:p-8 font-sans">
+    <div className="min-h-screen w-full bg-slate-50 p-4 md:p-8 font-sans">
       <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 md:gap-8 items-start">
         {/* LEFT SIDEBAR SECTION */}
         <TeacherSidebar
@@ -121,6 +109,7 @@ export default function TeacherDashboard({ user, onLogout }) {
                 <AssignHomeworkTab
                   students={students}
                   videos={videos}
+                  archivedSongs={archivedSongsList}
                   user={user}
                   fetchData={fetchTeacherData}
                 />
@@ -154,8 +143,6 @@ export default function TeacherDashboard({ user, onLogout }) {
       <StudentDetailModal
         selectedStudent={selectedStudent}
         onClose={() => setSelectedStudent(null)}
-        onUpdateLessonDay={handleUpdateStudentLessonDay}
-        teacherProfile={teacherProfile}
       />
 
       {/* NOTIFICATION INBOX DIALOG POPUP */}

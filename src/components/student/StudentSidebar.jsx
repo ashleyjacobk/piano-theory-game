@@ -27,11 +27,10 @@ export default function StudentSidebar({
       <div className="flex flex-col gap-2.5">
         <button
           onClick={() => setActiveTab("homework")}
-          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer flex justify-between items-center ${
-            activeTab === "homework"
+          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer flex justify-between items-center ${activeTab === "homework"
               ? "bg-emerald-300 text-slate-800 shadow-[1px_1px_0px_#1e293b] translate-y-0.5"
               : "bg-white text-slate-500 hover:bg-emerald-50"
-          }`}
+            }`}
         >
           <span>Homework</span>
           {uncompletedHWCount > 0 && (
@@ -43,33 +42,30 @@ export default function StudentSidebar({
 
         <button
           onClick={() => setActiveTab("free")}
-          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${
-            activeTab === "free"
+          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${activeTab === "free"
               ? "bg-emerald-300 text-slate-800 shadow-[1px_1px_0px_#1e293b] translate-y-0.5"
               : "bg-white text-slate-500 hover:bg-emerald-50"
-          }`}
+            }`}
         >
           Arcade Mode
         </button>
 
         <button
           onClick={() => setActiveTab("logs")}
-          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${
-            activeTab === "logs"
+          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${activeTab === "logs"
               ? "bg-emerald-300 text-slate-800 shadow-[1px_1px_0px_#1e293b] translate-y-0.5"
               : "bg-white text-slate-500 hover:bg-emerald-50"
-          }`}
+            }`}
         >
           Log Practice
         </button>
 
         <button
           onClick={() => setActiveTab("videos")}
-          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer flex justify-between items-center ${
-            activeTab === "videos"
+          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer flex justify-between items-center ${activeTab === "videos"
               ? "bg-emerald-300 text-slate-800 shadow-[1px_1px_0px_#1e293b] translate-y-0.5"
               : "bg-white text-slate-500 hover:bg-emerald-50"
-          }`}
+            }`}
         >
           <span>Video Lessons</span>
           {unreadNotificationsCount > 0 && (
@@ -81,11 +77,10 @@ export default function StudentSidebar({
 
         <button
           onClick={() => setActiveTab("profile")}
-          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${
-            activeTab === "profile"
+          className={`w-full text-left px-4 py-3 border-3 border-slate-800 rounded-2xl text-sm font-black shadow-[3px_3px_0px_#a7f3d0] transition active:translate-y-0.5 hover:scale-[1.02] cursor-pointer ${activeTab === "profile"
               ? "bg-emerald-300 text-slate-800 shadow-[1px_1px_0px_#1e293b] translate-y-0.5"
               : "bg-white text-slate-500 hover:bg-emerald-50"
-          }`}
+            }`}
         >
           My Profile
         </button>
@@ -94,7 +89,7 @@ export default function StudentSidebar({
       {/* Bottom Actions */}
       <div className="mt-auto border-t-3 border-slate-100 pt-4">
         <button
-          onClick={onLogout}
+          onClick={() => onLogout(false)}
           className="w-full py-2.5 bg-amber-300 hover:bg-amber-200 text-slate-800 border-3 border-slate-800 rounded-2xl text-xs font-black shadow-[2px_2px_0px_#a7f3d0] active:translate-y-0.5 hover:scale-[1.02] transition-all cursor-pointer text-center"
         >
           Logout

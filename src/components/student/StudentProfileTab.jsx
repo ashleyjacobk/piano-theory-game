@@ -42,11 +42,10 @@ export default function StudentProfileTab({ profileData, user, onLogout }) {
               <span className="text-2xl font-black text-emerald-600">{profileData.name}</span>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 block uppercase tracking-wide">Username / Email</span>
+              <span className="text-[10px] font-black text-slate-400 block uppercase tracking-wide">Email</span>
               <span className="bg-emerald-100 border-2 border-slate-800 px-2 py-0.5 rounded text-xs font-black block w-fit mb-1 shadow-[1px_1px_0px_#fef08a]">
-                @{profileData.username}
+                {profileData.username}
               </span>
-              <span className="text-xs font-bold text-slate-500">{profileData.email}</span>
             </div>
           </div>
 
@@ -54,12 +53,6 @@ export default function StudentProfileTab({ profileData, user, onLogout }) {
             <div>
               <span className="text-[10px] font-black text-slate-400 block uppercase tracking-wide">Teacher</span>
               <span className="text-lg font-black text-emerald-600">Teacher: {profileData.teacherName}</span>
-            </div>
-            <div>
-              <span className="text-[10px] font-black text-slate-400 block uppercase tracking-wide">Weekly Lesson Reset Day</span>
-              <span className="bg-emerald-100 border-2 border-slate-800 px-2 py-0.5 rounded text-xs font-black block w-fit shadow-[1px_1px_0px_#fef08a]">
-                Every {profileData.lessonDay || "Wednesday"}
-              </span>
             </div>
             <div>
               <span className="text-[10px] font-black text-slate-400 block uppercase tracking-wide">Teacher Connection Code</span>

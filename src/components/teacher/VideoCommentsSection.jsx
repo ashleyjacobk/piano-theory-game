@@ -59,7 +59,7 @@ export default function VideoCommentsSection({ video, user, onCommentCountChange
               comments.map((comment) => (
                 <div key={comment.id} className="text-[11px] bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
                   <div className="flex justify-between font-black text-[9px] text-indigo-600 mb-1">
-                    <span>{comment.name} (@{comment.username})</span>
+                    <span>{comment.name} ({comment.username})</span>
                     <span className="text-[8px] font-semibold text-slate-400">
                       {formatCommentDate(comment.createdAt)}
                     </span>
