@@ -82,8 +82,4 @@ For quick review, you can log in instantly with these pre-seeded demo accounts:
 * **Password**: `password`
 * *(Successfully connected to John Smith's teacher code `SMITH101`)*
 
----
 
-## 📝 Project Notice
-> [!NOTE]
-> This is a normal student/portfolio project in active development. It represents a hands-on learning project, demonstrating full-stack architecture, clean separation of concerns, and intuitive user experiences.
