@@ -6,9 +6,9 @@ This repository showcases a full-stack portfolio application with a kid-friendly
 
 ---
 
-## ✨ Core Features
+##  Core Features
 
-### 👩‍🏫 Instructor Features (Teacher Console)
+###  Instructor Features (Teacher Console)
 * **Student Roster Management**: Expand detailed student cards to track practice stats or use condensed lists.
 * **Practice Journal Insights**: Review a detailed chronological breakdown of student practice logs grouped by standard calendar weeks.
 * **Smart Homework Planner**: Create homework tasks for Note Matching, Chord Building, Staff Reading, or physical practice routines, with clean due dates.
@@ -18,7 +18,7 @@ This repository showcases a full-stack portfolio application with a kid-friendly
   * Real-time student-teacher feedback comments section on shared videos.
 * **Inbox Notifications**: Stay updated instantly when students leave new comments on lesson files.
 
-### 🧒 Student Features (Practice Portal)
+###  Student Features (Practice Portal)
 * **Interactive Neubrutalist Keyboard**: Click or tap keys to play custom audio synthesized using Web Audio APIs. Supports key label toggles (A-G, solfège, piano roll layout) and multi-octave switches.
 * **Note Match Game**: Match random grand staff prompts to keyboard keys under high-contrast feedback guidance.
 * **Chord Builder Game**: Construct complex major, minor, diminished, and augmented triad combinations on the keyboard.
@@ -28,7 +28,7 @@ This repository showcases a full-stack portfolio application with a kid-friendly
 
 ---
 
-## 🛠️ Technology Stack
+##  Tech Stack
 
 ### Frontend (Client)
 * **Core**: React (built on [Vite](https://vite.dev/))
@@ -44,7 +44,7 @@ This repository showcases a full-stack portfolio application with a kid-friendly
 
 ---
 
-## 🚀 How to Run the Project
+##  How to Run the Project
 
 ### 📋 Prerequisites
 Make sure you have [Node.js](https://nodejs.org/) installed (v18+ recommended).
@@ -68,22 +68,22 @@ npm run dev
 
 ---
 
-## 🔑 Quick Demo Credentials
+## Quick Demo Credentials
 
 For quick review, you can log in instantly with these pre-seeded demo accounts:
 
-### 👩‍🏫 Teacher View
+###  Teacher View
 * **Email Address**: `teacher@piano.com`
 * **Password**: `password`
 * **Teacher Connection Code**: `SMITH101`
 
-### 🧒 Student View
+###  Student View
 * **Email Address**: `ashley@piano.com`
 * **Password**: `password`
 * *(Successfully connected to John Smith's teacher code `SMITH101`)*
 
 ---
 
-## 📝 Project Notice
+## Project Notice
 > [!NOTE]
 > This is a normal student/portfolio project in active development. It represents a hands-on learning project, demonstrating full-stack architecture, clean separation of concerns, and intuitive user experiences.
